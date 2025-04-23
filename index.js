@@ -3,7 +3,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const qrcode = require('qrcode-terminal');
-const { v4: uuidv4 } = require('uuid'); // Add this dependency for unique IDs
+const { v4: uuidv4 } = require('uuid');
 
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
 const MAX_QUEUE = 10;
@@ -15,7 +15,6 @@ let activeDownloads = new Map(); // messageId -> {query, type, timestamp, ...}
 let runningPythonProcesses = 0;
 let pythonQueue = [];
 
-// Ensure downloads folder exists
 if (!fs.existsSync(DOWNLOADS_DIR)) {
     fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
 }
@@ -265,7 +264,7 @@ async function findMatchingFile(query, isBook) {
         // Prepare query terms for matching
         const queryTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 1);
         
-        // First look for exact matches (contains the whole query)
+        // First look for exact matches 
         const exactMatch = files.find(file => {
             const filename = file.name.toLowerCase();
             return queryTerms.every(term => filename.includes(term));
@@ -275,7 +274,7 @@ async function findMatchingFile(query, isBook) {
             return exactMatch.path;
         }
         
-        // Then look for partial matches (contains at least half of the query terms)
+        // Then look for partial matches 
         const halfTermsCount = Math.max(1, Math.ceil(queryTerms.length / 2));
         const partialMatch = files.find(file => {
             const filename = file.name.toLowerCase();
@@ -309,7 +308,7 @@ function runPythonDownloader(query, type = 'book', requestId) {
         const py = spawn('python', ['Downloader.py', query, '--type', type], { 
             cwd: __dirname,
             // Set timeout and memory limits to prevent runaway processes
-            timeout: 20 * 60 * 1000  // 20 minutes timeout
+            timeout: 20 * 60 * 1000  
         });
 
         let data = '';
@@ -418,12 +417,10 @@ async function findMatchingFile(query, isBook) {
             .split(/\s+/)
             .filter(term => term.length > 2); // Ignore short terms
 
-        // Score function for matching
         const getMatchScore = (filename) => {
             const name = filename.toLowerCase();
             let score = 0;
             
-            // Exact matches get highest score
             if (name.includes(query.toLowerCase())) {
                 score += 100;
             }
@@ -454,7 +451,7 @@ async function findMatchingFile(query, isBook) {
                 if (codeYearMatches.length > 0) {
                     // Among matching files, find the best title match
                     codeYearMatches.forEach(file => {
-                        file.score = getMatchScore(file.name) + 50; // Bonus for code/year match
+                        file.score = getMatchScore(file.name) + 50; 
                     });
                     
                     codeYearMatches.sort((a, b) => b.score - a.score);
@@ -464,18 +461,14 @@ async function findMatchingFile(query, isBook) {
             }
         }
 
-        // For all files (or if no course code/year match found), score them
         files.forEach(file => {
             file.score = getMatchScore(file.name);
             
-            // Bonus for recent files
             if (file.isRecent) file.score += 20;
             
-            // Bonus for larger files (likely complete downloads)
             if (file.size > 1024 * 1024) file.score += 10; // Files >1MB get bonus
         });
 
-        // Sort by score (highest first)
         files.sort((a, b) => b.score - a.score);
         
         // Debug output
